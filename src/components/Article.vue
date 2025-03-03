@@ -32,6 +32,8 @@ export default {
         const data = await response.json();
         this.article = data;
         this.parsedContent = marked(data.content);
+        console.log(this.parsedContent);
+        console.log('解析完成');
         this.fetchImages();
       } catch (error) {
         console.error('获取文章详细内容失败:', error);
