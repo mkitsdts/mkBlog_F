@@ -9,8 +9,8 @@
     <div class="nav-bar">
       <div class="nav-left">
         <button @click="goHome" class="nav-button">首页</button>
-        <button @click="goAbout" class="nav-button">关于</button>
         <button @click="goFriendLinks" class="nav-button">友链</button>
+        <button @click="goAbout" class="nav-button">关于</button>
       </div>
       <div class="nav-right">
         <input v-model="searchQuery" @keyup.enter="searchArticles" placeholder="搜索文章..." class="search-input">
@@ -21,7 +21,7 @@
       <div class="articles">
         <h1>文章</h1>
         <div class="article-list">
-          <div v-for="article in articles" :key="article.title" class="article-summary">
+          <div v-for="article in filteredArticles" :key="article.title" class="article-summary">
             <h2 @click="goToArticle(article.title)">{{ article.title }}</h2>
             <p>更新时间: {{ article.updateAt }}</p>
             <p>概要： {{ article.summary }}</p>
@@ -45,8 +45,8 @@
         <div class="archive">
           <h2>文章归档</h2>
           <ul>
-            <li v-for="category in categories" :key="category.name">
-              <h3>{{ category.name }}</h3>
+            <li v-for="category in filteredCategories">
+              <h3 @click="filterByCategory(category)">{{ category }}</h3>
               <ul>
                 <li v-for="article in category.articles" :key="article.title">
                   <a @click="goToArticle(article.title)">{{ article.title }}</a>
@@ -72,15 +72,30 @@ export default {
         github: 'https://github.com/mkitsdts',
       },
       articles: [],
-      categories: [], // 添加文章分类数据
+      categories: new Set(), // 添加文章分类数据
       currentPage: 1,
       maxPage: 1,
-      showQR: false
+      showQR: false,
+      selectedCategory: null // 添加选中的分类
     };
+  },
+  computed: {
+    filteredArticles() {
+      if (this.selectedCategory) {
+        return this.articles.filter(article => article.category === this.selectedCategory);
+      }
+      return this.articles;
+    },
+    filteredCategories(){
+      for(let i = 0; i < this.articles.length; i++){
+        this.categories.add(this.articles[i].category);
+        console.log(this.articles[i].category);
+      }
+      return this.categories;
+    }
   },
   created() {
     this.fetchArticles();
-    this.fetchCategories(); // 获取文章分类数据
   },
   methods: {
     async fetchArticles(page = 1) {
@@ -95,18 +110,6 @@ export default {
         this.currentPage = page;
       } catch (error) {
         console.error('获取文章数据失败:', error);
-      }
-    },
-    async fetchCategories() {
-      try {
-        const response = await fetch(`http://localhost:8080/categories`);
-        if (!response.ok) {
-          throw new Error('网络响应失败');
-        }
-        const data = await response.json();
-        this.categories = data.categories;
-      } catch (error) {
-        console.error('获取文章分类数据失败:', error);
       }
     },
     async searchArticles() {
@@ -145,6 +148,9 @@ export default {
         this.fetchArticles(this.currentPage + 1);
       }
     },
+    filterByCategory(category) {
+      this.selectedCategory = category;
+    }
   }
 };
 </script>
