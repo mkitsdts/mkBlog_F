@@ -9,22 +9,41 @@
     <div class="nav-bar">
       <div class="nav-left">
         <button @click="goHome" class="nav-button">首页</button>
-        <button @click="goAbout" class="nav-button">关于</button>
         <button @click="goFriendLinks" class="nav-button">友链</button>
+        <button @click="goAbout" class="nav-button">关于</button>
       </div>
       <div class="nav-right">
         <input v-model="searchQuery" @keyup.enter="searchArticles" placeholder="搜索文章..." class="search-input">
         <button @click="searchArticles" class="search-button">搜索</button>
       </div>
     </div>
-    <h1>友链</h1>
-    <ul>
-      <li><a :href="links.bilibili" target="_blank">哔哩哔哩</a></li>
-      <li><a href="#" @click.prevent="showWeChatQR">微信</a></li>
-    </ul>
-    <div v-if="showQR" class="wechat-qr-modal">
-      <img :src="links.wechatQR" alt="微信好友二维码" class="wechat-qr">
-      <button @click="closeWeChatQR">关闭</button>
+    <div class="options">
+      <span :class="{ active: selectedOption === 'neighbors' }" @click="selectOption('neighbors')">邻居</span>
+      <span :class="{ active: selectedOption === 'apply' }" @click="selectOption('apply')">申请</span>
+    </div>
+    <div v-if="selectedOption === 'neighbors'" class="neighbors">
+      <div v-for="neighbor in neighbors" :key="neighbor.email" class="neighbor-card" @click="goToWebsite(neighbor.website)">
+        <p>{{ neighbor.name }}</p>
+        <p>{{ neighbor.email }}</p>
+      </div>
+    </div>
+    <div v-if="selectedOption === 'apply'" class="apply-form">
+      <h1>申请友链</h1>
+      <form @submit.prevent="submitApplication">
+        <div>
+          <label for="name">名字:</label>
+          <input type="text" id="name" v-model="application.name" required>
+        </div>
+        <div>
+          <label for="email">邮箱:</label>
+          <input type="email" id="email" v-model="application.email" required>
+        </div>
+        <div>
+          <label for="website">网址:</label>
+          <input type="url" id="website" v-model="application.website" required>
+        </div>
+        <button type="submit">提交</button>
+      </form>
     </div>
   </div>
 </template>
@@ -36,11 +55,13 @@ export default {
       profileImage: new URL('@/assets/avatar.png', import.meta.url).href,
       username: 'mkitsdts',
       searchQuery: '',
-      links: {
-        bilibili: 'https://space.bilibili.com/390343932?spm_id_from=333.937.0.0',
-        wechatQR: new URL('@/assets/avatar.jpg', import.meta.url).href,
-      },
-      showQR: false
+      selectedOption: 'neighbors', // 默认选中的选项
+      neighbors: [], // 存储邻居数据
+      application: {
+        name: '',
+        email: '',
+        website: ''
+      }
     };
   },
   methods: {
@@ -65,11 +86,51 @@ export default {
         console.error('搜索文章数据失败:', error);
       }
     },
-    showWeChatQR() {
-      this.showQR = true;
+    selectOption(option) {
+      this.selectedOption = option;
+      if (option === 'neighbors') {
+        this.fetchNeighbors();
+      }
     },
-    closeWeChatQR() {
-      this.showQR = false;
+    async fetchNeighbors() {
+      try {
+        const response = await fetch('http://localhost:8080/friend');
+        if (!response.ok) {
+          throw new Error('网络响应失败');
+        }
+        const data = await response.json();
+        this.neighbors = data.neighbors;
+      } catch (error) {
+        console.error('获取邻居数据失败:', error);
+      }
+    },
+    goToWebsite(website) {
+      window.open(website, '_blank');
+    },
+    async submitApplication() {
+      const applicationData = {
+        ...this.application,
+        date: new Date().toISOString()
+      };
+      try {
+        const response = await fetch('http://localhost:8080/friend/apply', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(applicationData)
+        });
+        console.log(JSON.stringify(applicationData))
+        if (!response.ok) {
+          throw new Error('提交申请失败');
+        }
+        alert('申请提交成功');
+        this.application.name = '';
+        this.application.email = '';
+        this.application.website = '';
+      } catch (error) {
+        console.error('提交申请失败:', error);
+      }
     }
   }
 };
@@ -155,6 +216,80 @@ export default {
   cursor: pointer;
 }
 
+.options {
+  display: flex;
+  gap: 20px;
+  margin-bottom: 20px;
+}
+
+.options span {
+  cursor: pointer;
+  font-size: 16px;
+}
+
+.options .active {
+  font-weight: bold;
+  color: #ff69b4; /* 高亮颜色 */
+}
+
+.neighbors {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.neighbor-card {
+  border: 1px solid #ccc;
+  padding: 10px;
+  border-radius: 5px;
+  width: calc(100% / 6 - 10px);
+  text-align: center;
+  cursor: pointer;
+}
+
+.neighbor-card:hover {
+  background-color: #f0f0f0;
+}
+
+.apply-form {
+  width: 50vw;
+  border: 1px solid #ccc;
+  padding: 20px;
+  border-radius: 10px;
+  background-color: #f9f9f9;
+}
+
+.apply-form form {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.apply-form label {
+  font-weight: bold;
+}
+
+.apply-form input {
+  padding: 5px;
+  font-size: 16px;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+}
+
+.apply-form button {
+  padding: 10px;
+  font-size: 16px;
+  background-color: #ff69b4;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.apply-form button:hover {
+  background-color: #ff1493;
+}
+
 .avatar {
   width: 100px;
   height: 100px;
@@ -175,21 +310,5 @@ export default {
 
 .friend-links-page li {
   margin-bottom: 10px;
-}
-
-.wechat-qr-modal {
-  position: fixed;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  background: white;
-  padding: 20px;
-  border: 1px solid #ccc;
-  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-}
-
-.wechat-qr {
-  width: 100px;
-  height: 100px;
 }
 </style>

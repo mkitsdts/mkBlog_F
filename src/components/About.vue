@@ -9,12 +9,13 @@
     <div class="nav-bar">
       <div class="nav-left">
         <button @click="goHome" class="nav-button">首页</button>
-        <button @click="goAbout" class="nav-button">关于</button>
         <button @click="goFriendLinks" class="nav-button">友链</button>
+        <button @click="goAbout" class="nav-button">关于</button>
       </div>
     </div>
-    <h1>关于</h1>
-    <p>这是关于页面的内容。</p>
+    <h1>自我介绍</h1>
+    <p>本人鼠鼠，长期生活在阴沟里。</p>
+    <p>鼠鼠知道没人会联系 mkitsdts@outlook.com ， 因为鼠鼠穿越50年后依旧没有收到任何邮箱...</p>
   </div>
 </template>
 

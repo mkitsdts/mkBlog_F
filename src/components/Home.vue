@@ -75,13 +75,12 @@ export default {
       categories: new Set(), // 添加文章分类数据
       currentPage: 1,
       maxPage: 1,
-      showQR: false,
       selectedCategory: null // 添加选中的分类
     };
   },
   computed: {
     filteredArticles() {
-      if (this.selectedCategory) {
+      if (this.selectedCategory != null) {
         return this.articles.filter(article => article.category === this.selectedCategory);
       }
       return this.articles;
